@@ -9,6 +9,132 @@
 // @grant        none
 // ==/UserScript==
 
+const myStyle = `
+  .tampermonkey-btn {
+    appearance: auto;
+    writing-mode: horizontal-tb !important;
+    font-style: ;
+    font-variant-ligatures: ;
+    font-variant-caps: ;
+    font-variant-numeric: ;
+    font-variant-east-asian: ;
+    font-variant-alternates: ;
+    font-weight: ;
+    font-stretch: ;
+    font-size: ;
+    font-family: ;
+    font-optical-sizing: ;
+    font-kerning: ;
+    font-feature-settings: ;
+    font-variation-settings: ;
+    text-rendering: auto;
+    color: buttontext;
+    letter-spacing: normal;
+    word-spacing: normal;
+    line-height: normal;
+    text-transform: none;
+    text-indent: 0px;
+    text-shadow: none;
+    display: inline-block;
+    text-align: center;
+    align-items: flex-start;
+    cursor: default;
+    box-sizing: border-box;
+    background-color: buttonface;
+    margin: 0em;
+    padding: 1px 6px;
+    border-width: 2px;
+    border-style: outset;
+    border-color: buttonborder;
+    border-image: initial;
+
+
+    -webkit-box-align: baseline;
+    align-items: baseline;
+    box-sizing: border-box;
+    display: inline-flex;
+    font-size: inherit;
+    font-style: normal;
+    font-family: inherit;
+    font-weight: 500;
+    max-width: 100%;
+    position: relative;
+    text-align: center;
+    white-space: nowrap;
+    cursor: pointer;
+    height: 2.28571em;
+    line-height: 2.28571em;
+    vertical-align: middle;
+    width: auto;
+    -webkit-box-pack: center;
+    justify-content: center;
+    color: var(--ds-text, #42526E) !important;
+    border-width: 0px;
+    border-radius: 3px;
+    text-decoration: none;
+    transition: background 0.1s ease-out 0s, box-shadow 0.15s cubic-bezier(0.47, 0.03, 0.49, 1.38) 0s;
+    background: var(--ds-background-neutral, rgba(9, 30, 66, 0.04));
+    padding: 0px 10px;
+    outline: none;
+    margin: 0 0 0 10px;
+  }
+
+
+  .tamper-monkye-btn > span {
+    -webkit-box-align: baseline;
+    align-items: baseline;
+    box-sizing: border-box;
+    display: inline-flex;
+    font-size: inherit;
+    font-style: normal;
+    font-family: inherit;
+    font-weight: 500;
+    max-width: 100%;
+    position: relative;
+    text-align: center;
+    white-space: nowrap;
+    cursor: pointer;
+    height: 2.28571em;
+    line-height: 2.28571em;
+    vertical-align: middle;
+    width: auto;
+    -webkit-box-pack: center;
+    justify-content: center;
+    color: var(--ds-text, #42526E) !important;
+    border-width: 0px;
+    border-radius: 3px;
+    text-decoration: none;
+    transition: background 0.1s ease-out 0s, box-shadow 0.15s cubic-bezier(0.47, 0.03, 0.49, 1.38) 0s;
+    background: var(--ds-background-neutral, rgba(9, 30, 66, 0.04));
+    padding: 0px 10px;
+    outline: none;
+    margin: 0px;
+
+
+    opacity: 1;
+    transition: opacity 0.3s ease 0s;
+    margin: 0px 2px;
+    -webkit-box-flex: 1;
+    flex-grow: 1;
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tampermonkey-btns-wrapper {
+    height: 20px;
+    width: 20px;
+    position: relative;
+  }
+  .tampermonkey-btns-wrapper > div {
+    position: absolute;
+    display: flex;
+    top: -4px;
+    left: 0;
+  }
+`;
+
 (function () {
   "use strict";
 
@@ -85,23 +211,38 @@
       SELECTORS.openIssue.issueTitle
     ).innerHTML;
 
-    const copyTitleBtnNode = createMyNode(
-      `<button id="${SELECTORS.openIssue.copyOpenIssueTitle_elementId}"> Copy title </button>`
-    );
-    copyTitleBtnNode.addEventListener(
-      "click",
-      async () => await copyToClipboard(`${issueId} - ${issueTitle}`)
-    );
+    const createCopyTitleBtn = () => {
+      const copyTitleBtnNode = createMyNode(
+        `<button class="tampermonkey-btn" id="${SELECTORS.openIssue.copyOpenIssueTitle_elementId}"> <span> Copy title <span> </button>`
+      );
+      copyTitleBtnNode.addEventListener(
+        "click",
+        async () => await copyToClipboard(`${issueId} - ${issueTitle}`)
+      );
+      return copyTitleBtnNode;
+    };
+    const createCopyIdBtn = () => {
+      const copyIdBtnNode = createMyNode(
+        `<button class="tampermonkey-btn"> <span> Copy ID </span> </button>`
+      );
+      copyIdBtnNode.addEventListener(
+        "click",
+        async () => await copyToClipboard(issueId)
+      );
+      return copyIdBtnNode;
+    };
 
-    const copyIdBtnNode = createMyNode(`<button> Copy id </button>`);
-    copyIdBtnNode.addEventListener(
-      "click",
-      async () => await copyToClipboard(issueId)
+    const wrapperButtonsNode = createMyNode(
+      `<div class="tampermonkey-btns-wrapper"><div></div></div>`
     );
-    [copyTitleBtnNode, copyIdBtnNode].forEach((n) =>
-      breadCrumbIssueIdContainer.appendChild(n)
+    [createCopyTitleBtn(), createCopyIdBtn()].forEach((n) =>
+      wrapperButtonsNode.firstChild.appendChild(n)
     );
+    breadCrumbIssueIdContainer.appendChild(wrapperButtonsNode);
   };
+
+  // SYLTE
+  document.body.append(createMyNode(`<style>${myStyle}</style>`));
 
   const currentPage = getCurrentPage();
   //TODO:
