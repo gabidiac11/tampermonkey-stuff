@@ -213,7 +213,7 @@ const myStyle = `
 
     const createCopyTitleBtn = () => {
       const copyTitleBtnNode = createMyNode(
-        `<button class="tampermonkey-btn" id="${SELECTORS.openIssue.copyOpenIssueTitle_elementId}"> <span> Copy title <span> </button>`
+        `<button class="tampermonkey-btn" id="${SELECTORS.openIssue.copyOpenIssueTitle_elementId}"><span> Copy title <span></button>`
       );
       copyTitleBtnNode.addEventListener(
         "click",
@@ -223,7 +223,7 @@ const myStyle = `
     };
     const createCopyIdBtn = () => {
       const copyIdBtnNode = createMyNode(
-        `<button class="tampermonkey-btn"> <span> Copy ID </span> </button>`
+        `<button class="tampermonkey-btn"><span> Copy ID </span></button>`
       );
       copyIdBtnNode.addEventListener(
         "click",
