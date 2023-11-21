@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         New Userscript
+// @name         Side by side translate
 // @namespace    http://tampermonkey.net/
 // @version      0.1
 // @description  try to take over the world!
@@ -42,6 +42,25 @@
         resolve();
       }, time);
     });
+  }
+
+  async function executeGradualPageScroling() {
+    const scrollHeight = document.body.scrollHeight;
+    const innerHeight = window.innerHeight;
+
+    const maxFactor = Math.floor(scrollHeight / innerHeight) + 1;
+    for (let i = 0; i <= innerHeight * maxFactor; i++) {
+      const factorSum = i * innerHeight;
+      const newPageHeight =
+        factorSum >= scrollHeight ? scrollHeight : factorSum;
+
+      window.scrollTo(0, newPageHeight);
+      await waitAsync(350);
+
+      if (factorSum >= scrollHeight) break;
+    }
+
+    window.scrollTo(0, 0);
   }
 
   const loader = (() => {
@@ -128,7 +147,7 @@
       return iframeTrContentItems;
     };
 
-    const getLangOption = () => {
+    const getEngTrLangOption = () => {
       const iframeTrContentItems = getIframeContentItems(`.skiptranslate`);
       const searchByCandidates = ["Engleză", "English", "Английский", "Engels"];
 
@@ -174,13 +193,9 @@
 
       await waitAsync(150);
 
-      getLangOption().click();
+      getEngTrLangOption().click();
 
-      await waitAsync(500);
-
-      window.scrollTo(0, orgBodyEl.scrollHeight);
-      await waitAsync(500);
-      window.scrollTo(0, 0);
+      await executeGradualPageScroling();
 
       createSideBySidePageClones(panelEl, originalBodyStr);
 
@@ -254,7 +269,7 @@
             position: fixed;
             top: 0;
             background-color: rgba(0,0,0,0.8);
-            z-index: 9;
+            z-index: 9999;
             justify-content: center;
             align-items: center;
           }
