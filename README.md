@@ -17,7 +17,7 @@ Uses translate element free API.
 ![Side by side translation song step 2](https://github.com/gabidiac11/tampermonkey-stuff/blob/main/docs/img/side-by-side-translation/side-by-side-translation-song-2.png)
 
 ## Page actions script
-In the day to day life of FE development, we might get into situation when we keep need to refil inputs and click stuff just to get where we really want to work on the page, which is annoying. I use this script to just to a series of actions like these to make it work faster.
+In the day to day life of FE development, we might get into situation when we keep needing to refill inputs, click stuff just to get where we really want to work on the page, which is annoying. I use this script to just to run a series of actions like these just to skip tediuous work.
 
 Example:
 ```js
