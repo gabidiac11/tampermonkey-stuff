@@ -1,0 +1,30 @@
+{
+  "name": "tampermonkey-gabi-scripts",
+  "version": "1.0.0",
+  "description": "Tampermonkey scripts for making life sufferable",
+  "main": "jira-copy-paste-stuff.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rollup -c",
+    "watch": "rollup -c --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gabidiac11/tampermonkey-stuff.git"
+  },
+  "author": "Gabriel Diac",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gabidiac11/tampermonkey-stuff/issues"
+  },
+  "homepage": "https://github.com/gabidiac11/tampermonkey-stuff#readme",
+  "devDependencies": {
+    "glob": "^10.3.10",
+    "rollup": "^4.9.2",
+    "rollup-plugin-typescript2": "^0.36.0",
+    "typescript": "^5.3.3"
+  }
+}
