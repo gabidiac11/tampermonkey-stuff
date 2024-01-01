@@ -91,9 +91,7 @@ const createHtmlElement = (htmlStringToBeParsed) => {
                 const name = (_b = (_a = node.querySelector(`a[href^="/books/"]`)) === null || _a === void 0 ? void 0 : _a.innerHTML) !== null && _b !== void 0 ? _b : "";
                 if (!name)
                     throw "Could not get book name from HTML";
-                const author = (_d = (_c = node.querySelector(`a[href^="/authors/"]`)) === null || _c === void 0 ? void 0 : _c.innerHTML) !== null && _d !== void 0 ? _d : "";
-                if (!author)
-                    throw "Could not get book author from HTML";
+                const author = (_d = (_c = node.querySelector(`a[href^="/authors/"]`)) === null || _c === void 0 ? void 0 : _c.innerHTML) !== null && _d !== void 0 ? _d : "Unknown";
                 const id = `${name}-${author}`;
                 return {
                     id,

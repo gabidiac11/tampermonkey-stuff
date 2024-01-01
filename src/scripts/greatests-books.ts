@@ -125,8 +125,7 @@ import { createHtmlElement } from "../utils";
         if (!name) throw "Could not get book name from HTML";
 
         const author =
-          node.querySelector(`a[href^="/authors/"]`)?.innerHTML ?? "";
-        if (!author) throw "Could not get book author from HTML";
+          node.querySelector(`a[href^="/authors/"]`)?.innerHTML ?? "Unknown";
 
         const id = `${name}-${author}`;
 
