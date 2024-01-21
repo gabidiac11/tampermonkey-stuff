@@ -8,7 +8,7 @@ export const createHtmlElement = (htmlStringToBeParsed: string) => {
 export const appendCss = (css: string) => {
   const styleEl = document.createElement("STYLE");
   styleEl.innerHTML = css;
-  document.head.append(styleEl);
+  document.head.appendChild(styleEl);
   console.log("added csss", { styleEl });
   return styleEl as HTMLElement;
 };

@@ -3,7 +3,7 @@
 const appendCss = (css) => {
     const styleEl = document.createElement("STYLE");
     styleEl.innerHTML = css;
-    document.head.append(styleEl);
+    document.head.appendChild(styleEl);
     console.log("added csss", { styleEl });
     return styleEl;
 };
@@ -23,7 +23,7 @@ const appendCss = (css) => {
         .trim()
         .replace(/[\n\r]/g, "")
         .toLowerCase();
-    const videoTagSelectors = [
+    const videoTagSelectorDesktop = [
         // video suggestion on home page
         "ytd-rich-item-renderer",
         // video suggestion when searching
@@ -31,6 +31,13 @@ const appendCss = (css) => {
         // video suggestion from side meniu
         "ytd-compact-video-renderer",
     ];
+    const videoTagSelectorMobile = [
+        // mobile suggestion on home page
+        "ytm-rich-item-renderer",
+        // mobile video suggestion when searching
+        "ytm-video-with-context-renderer",
+    ];
+    const videoTagSelectors = videoTagSelectorDesktop.concat(videoTagSelectorMobile);
     const extractCurrentVideoNodes = () => videoTagSelectors.reduce((list, selector) => {
         return [
             ...list,
@@ -38,14 +45,34 @@ const appendCss = (css) => {
         ];
     }, []);
     const VideoNode = (el) => {
-        var _a, _b, _c, _d;
-        const channel = cleanAuthorString((_b = (_a = el.querySelector(".ytd-channel-name")) === null || _a === void 0 ? void 0 : _a.innerText) !== null && _b !== void 0 ? _b : "");
-        const title = cleanAuthorString((_d = (_c = el.querySelector("#video-title")) === null || _c === void 0 ? void 0 : _c.innerText) !== null && _d !== void 0 ? _d : "");
-        const texts = Array.prototype.map.call(el.querySelectorAll(`yt-formatted-string`), (i) => i.innerText);
+        const getDataDesktop = () => {
+            var _a, _b, _c, _d;
+            const channel = cleanAuthorString((_b = (_a = el.querySelector(".ytd-channel-name")) === null || _a === void 0 ? void 0 : _a.innerText) !== null && _b !== void 0 ? _b : "");
+            const title = cleanAuthorString((_d = (_c = el.querySelector("#video-title")) === null || _c === void 0 ? void 0 : _c.innerText) !== null && _d !== void 0 ? _d : "");
+            const texts = Array.prototype.map.call(el.querySelectorAll(`yt-formatted-string`), (i) => i.innerText);
+            return {
+                channel,
+                title,
+                texts,
+            };
+        };
+        const getDataMobile = () => {
+            var _a, _b, _c, _d;
+            const channel = cleanAuthorString((_b = (_a = el.querySelector("ytm-badge-and-byline-renderer .ytm-badge-and-byline-item-byline")) === null || _a === void 0 ? void 0 : _a.innerText) !== null && _b !== void 0 ? _b : "");
+            const title = cleanAuthorString((_d = (_c = el.querySelector("h3")) === null || _c === void 0 ? void 0 : _c.innerText) !== null && _d !== void 0 ? _d : "");
+            const texts = [el.innerText];
+            return {
+                channel,
+                title,
+                texts,
+            };
+        };
+        const isDesktop = () => videoTagSelectorDesktop.some((i) => el.tagName.toLowerCase() === i);
+        const data = isDesktop() ? getDataDesktop() : getDataMobile();
         return {
-            channel,
-            title,
-            texts,
+            channel: data.channel,
+            title: data.title,
+            texts: data.texts,
             hideThumbnail: () => {
                 const thumbnail = el.querySelector("#thumbnail");
                 if (!thumbnail)
@@ -56,8 +83,12 @@ const appendCss = (css) => {
                 el.classList.add("tampered");
             },
             showElement: () => {
-                el.style.display = "initial";
+                el.classList.add("tampered-display-visible");
             },
+            hideElement: () => {
+                el.classList.remove("tampered-display-visible");
+            },
+            el,
         };
     };
     const isRus = (() => {
@@ -182,16 +213,29 @@ const appendCss = (css) => {
     const isBanciu = (el) => /Banciu[\s\0]/.test(el.title);
     const showAllowedVideoThumbnails = () => {
         const allVideos = extractCurrentVideoNodes();
+        // allVideos.forEach(i => i.hideElement())
         allVideos
             .filter((i) => isRus(i) || isAllowedChannel(i) || isBanciu(i))
             .forEach((i) => i.showElement());
+        console.log({ allVideos });
         allVideos.forEach((i) => i.markTampered());
     };
     // main:
     // activatePrintAuthors();
     appendCss(`
     ${videoTagSelectors.join(",")} {
-      display: none;
+      display: none!important;
+    }
+
+    ${videoTagSelectors.map((i) => `${i}.tampered-display-visible`).join(",")} {
+      display: initial!important;
+    }
+
+    ytm-reel-shelf-renderer {
+      display: none!important;
+    }
+    ytm-pivot-bar-renderer ytm-pivot-bar-item-renderer:nth-child(2) {
+      display: none!important;
     }
   `);
     showAllowedVideoThumbnails();

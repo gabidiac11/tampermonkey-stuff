@@ -18,7 +18,7 @@ import { appendCss } from "../utils";
       .trim()
       .replace(/[\n\r]/g, "")
       .toLowerCase();
-  const videoTagSelectors = [
+  const videoTagSelectorDesktop = [
     // video suggestion on home page
     "ytd-rich-item-renderer",
     // video suggestion when searching
@@ -26,6 +26,15 @@ import { appendCss } from "../utils";
     // video suggestion from side meniu
     "ytd-compact-video-renderer",
   ];
+  const videoTagSelectorMobile = [
+    // mobile suggestion on home page
+    "ytm-rich-item-renderer",
+    // mobile video suggestion when searching
+    "ytm-video-with-context-renderer",
+  ];
+  const videoTagSelectors = videoTagSelectorDesktop.concat(
+    videoTagSelectorMobile
+  );
   const extractCurrentVideoNodes = () =>
     videoTagSelectors.reduce((list, selector) => {
       return [
@@ -44,24 +53,55 @@ import { appendCss } from "../utils";
     hideThumbnail: () => void;
     markTampered: () => void;
     showElement: () => void;
+    hideElement: () => void;
   };
 
   const VideoNode = (el: HTMLElement) => {
-    const channel = cleanAuthorString(
-      (el.querySelector(".ytd-channel-name") as HTMLElement)?.innerText ?? ""
-    );
-    const title = cleanAuthorString(
-      (el.querySelector("#video-title") as HTMLElement)?.innerText ?? ""
-    );
-    const texts = Array.prototype.map.call(
-      el.querySelectorAll(`yt-formatted-string`),
-      (i) => i.innerText
-    ) as unknown as string[];
+    const getDataDesktop = () => {
+      const channel = cleanAuthorString(
+        el.querySelector<HTMLElement>(".ytd-channel-name")?.innerText ?? ""
+      );
+      const title = cleanAuthorString(
+        el.querySelector<HTMLElement>("#video-title")?.innerText ?? ""
+      );
+      const texts = Array.prototype.map.call(
+        el.querySelectorAll(`yt-formatted-string`),
+        (i) => i.innerText
+      ) as unknown as string[];
 
+      return {
+        channel,
+        title,
+        texts,
+      };
+    };
+
+    const getDataMobile = () => {
+      const channel = cleanAuthorString(
+        el.querySelector<HTMLElement>(
+          "ytm-badge-and-byline-renderer .ytm-badge-and-byline-item-byline"
+        )?.innerText ?? ""
+      );
+      const title = cleanAuthorString(
+        el.querySelector<HTMLElement>("h3")?.innerText ?? ""
+      );
+      const texts = [el.innerText];
+
+      return {
+        channel,
+        title,
+        texts,
+      };
+    };
+
+    const isDesktop = () =>
+      videoTagSelectorDesktop.some((i) => el.tagName.toLowerCase() === i);
+
+    const data = isDesktop() ? getDataDesktop() : getDataMobile();
     return {
-      channel,
-      title,
-      texts,
+      channel: data.channel,
+      title: data.title,
+      texts: data.texts,
       hideThumbnail: () => {
         const thumbnail = el.querySelector<HTMLElement>("#thumbnail");
         if (!thumbnail) return;
@@ -71,8 +111,12 @@ import { appendCss } from "../utils";
         el.classList.add("tampered");
       },
       showElement: () => {
-        el.style.display = "initial";
+        el.classList.add("tampered-display-visible");
       },
+      hideElement: () => {
+        el.classList.remove("tampered-display-visible");
+      },
+      el,
     } as IVideoNode;
   };
 
@@ -274,10 +318,11 @@ import { appendCss } from "../utils";
 
   const showAllowedVideoThumbnails = () => {
     const allVideos = extractCurrentVideoNodes();
+    // allVideos.forEach(i => i.hideElement())
     allVideos
       .filter((i) => isRus(i) || isAllowedChannel(i) || isBanciu(i))
       .forEach((i) => i.showElement());
-
+    console.log({ allVideos });
     allVideos.forEach((i) => i.markTampered());
   };
 
@@ -286,7 +331,18 @@ import { appendCss } from "../utils";
 
   appendCss(`
     ${videoTagSelectors.join(",")} {
-      display: none;
+      display: none!important;
+    }
+
+    ${videoTagSelectors.map((i) => `${i}.tampered-display-visible`).join(",")} {
+      display: initial!important;
+    }
+
+    ytm-reel-shelf-renderer {
+      display: none!important;
+    }
+    ytm-pivot-bar-renderer ytm-pivot-bar-item-renderer:nth-child(2) {
+      display: none!important;
     }
   `);
   showAllowedVideoThumbnails();
