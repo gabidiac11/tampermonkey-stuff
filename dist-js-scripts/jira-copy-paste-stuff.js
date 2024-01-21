@@ -79,7 +79,11 @@ const myStyle = `
     margin: 0 0 0 10px;
   }
 
-
+  .tr-my-stuff-panel {
+    position: relative;
+    z-index: 99;
+  }
+  
   .tamper-monkye-btn > span {
     -webkit-box-align: baseline;
     align-items: baseline;
