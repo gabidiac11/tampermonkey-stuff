@@ -83,9 +83,11 @@ const appendCss = (css) => {
                 el.classList.add("tampered");
             },
             showElement: () => {
+                el.classList.remove("tampered-display-none");
                 el.classList.add("tampered-display-visible");
             },
             hideElement: () => {
+                el.classList.add("tampered-display-none");
                 el.classList.remove("tampered-display-visible");
             },
             el,
@@ -211,24 +213,37 @@ const appendCss = (css) => {
         };
     })();
     const isBanciu = (el) => /Banciu[\s\0]/.test(el.title);
+    let timeout = 0;
     const showAllowedVideoThumbnails = () => {
-        const allVideos = extractCurrentVideoNodes();
-        // allVideos.forEach(i => i.hideElement())
-        allVideos
-            .filter((i) => isRus(i) || isAllowedChannel(i) || isBanciu(i))
-            .forEach((i) => i.showElement());
-        console.log({ allVideos });
-        allVideos.forEach((i) => i.markTampered());
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            const allVideos = extractCurrentVideoNodes();
+            // allVideos.forEach(i => i.hideElement())
+            allVideos
+                .forEach((i) => {
+                if (isRus(i) || isAllowedChannel(i) || isBanciu(i)) {
+                    i.showElement();
+                }
+                else {
+                    i.hideElement();
+                }
+            });
+            console.log({ allVideos });
+            allVideos.forEach((i) => i.markTampered());
+        }, 300);
     };
-    // main:
-    // activatePrintAuthors();
     appendCss(`
     ${videoTagSelectors.join(",")} {
+      opacity: 0!important;
+    }
+
+    ${videoTagSelectors.map((i) => `${i}.tampered-display-none`).join(",")} {
       display: none!important;
     }
 
     ${videoTagSelectors.map((i) => `${i}.tampered-display-visible`).join(",")} {
       display: initial!important;
+      opacity: 1!important;
     }
 
     ytm-reel-shelf-renderer {
