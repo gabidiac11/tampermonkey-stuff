@@ -391,43 +391,121 @@ declare global {
     }
   `;
 
-  if (
-    isChannelPage() ||
-    isHistoryPage() ||
-    isPlaylistPage() ||
-    isSubscriptionsPage() ||
-    isMyPageChannel()
-  ) {
-    appendCss(reelHideCss);
-  } else if (isSearchPage()) {
-    appendCss(reelHideCss);
-  } else {
-    console.log("ischannelpage", window.location.pathname.startsWith("/@"));
+  const pageManager = (() => {
+    enum PageIdentifier {
+      Neutral,
+      RestrictSuggestions,
+    }
+    interface Page {
+      identifier: PageIdentifier;
+      mount: () => void;
+      unMount: () => void;
+    }
+    const PageNeutral = (): Page => {
+      let styleNode: null | HTMLElement = null;
+      const unMount = () => {
+        console.log("Unmount PageNetral.");
+        styleNode?.parentNode?.removeChild(styleNode);
+      };
+      const mount = () => {
+        console.log("Mount PageNetral.");
+        styleNode = appendCss(reelHideCss);
+      };
+      return {
+        identifier: PageIdentifier.Neutral,
+        mount,
+        unMount,
+      };
+    };
     // home page
     // search page
     // video playing page
-    appendCss(`
-      ${videoTagSelectors.join(",")} {
-        opacity: 0!important;
-        pointer-events: none!important;
-      }
+    const PageRestrictSuggestions = (): Page => {
+      let styleNode: null | HTMLElement = null;
+      const unMount = () => {
+        console.log("Unmount PageRestrictSuggestions.");
+        document.removeEventListener("scroll", showAllowedVideoThumbnails);
+        styleNode?.parentNode?.removeChild(styleNode);
+
+      };
   
-      ${videoTagSelectors.map((i) => `${i}.tampered-display-none`).join(",")} {
-        display: none!important;
-      }
+      const mount = () => {
+        console.log("Mount PageRestrictSuggestions."); 
+        styleNode = appendCss(`
+            ${videoTagSelectors.join(",")} {
+              opacity: 0!important;
+              pointer-events: none!important;
+            }
   
-      ${videoTagSelectors
-        .map((i) => `${i}.tampered-display-visible`)
-        .join(",")} {
-        display: initial!important;
-        opacity: 1!important;
-        pointer-events: initial!important;
-      }
+            ${videoTagSelectors
+              .map((i) => `${i}.tampered-display-none`)
+              .join(",")} {
+              display: none!important;
+            }
   
-      ${reelHideCss}
-    `);
-    onStartShowAllowedVideoThumbnails();
-    document.addEventListener("scroll", () => showAllowedVideoThumbnails());
-  }
+            ${videoTagSelectors
+              .map((i) => `${i}.tampered-display-visible`)
+              .join(",")} {
+              display: initial!important;
+              opacity: 1!important;
+              pointer-events: initial!important;
+            }
+  
+            ${reelHideCss}
+          `);
+        onStartShowAllowedVideoThumbnails();
+        document.addEventListener("scroll", showAllowedVideoThumbnails);
+      };
+      return {
+        identifier: PageIdentifier.RestrictSuggestions,
+        mount,
+        unMount,
+      };
+    };
+
+    let currentPage: Page | null = null;
+    const getNextPage = (): PageIdentifier => {
+      if (
+        isChannelPage() ||
+        isHistoryPage() ||
+        isPlaylistPage() ||
+        isSubscriptionsPage() ||
+        isMyPageChannel() ||
+        isSearchPage()
+      ) {
+        return PageIdentifier.Neutral;
+      }
+      return PageIdentifier.RestrictSuggestions;
+    };
+    const createPageByIdentifier = (id: PageIdentifier): Page => {
+      if (id === PageIdentifier.Neutral) {
+        return PageNeutral();
+      }
+      return PageRestrictSuggestions();
+    };
+    const runRequiredScriptIfPageChanged = () => {
+      const nextPageId = getNextPage();
+      if (nextPageId === currentPage?.identifier) {
+        return;
+      }
+
+      currentPage?.unMount();
+
+      currentPage = createPageByIdentifier(nextPageId);
+      currentPage.mount();
+    };
+
+    const run = () => {
+      runRequiredScriptIfPageChanged();
+      setInterval(() => {
+        runRequiredScriptIfPageChanged()
+      }, 100);
+    }
+    return {
+      run
+    }
+  })();
+
+  pageManager.run();
 })();
 export {};

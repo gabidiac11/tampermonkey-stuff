@@ -298,42 +298,109 @@ const appendCss = (css) => {
       display: none!important;
     }
   `;
-    if (isChannelPage() ||
-        isHistoryPage() ||
-        isPlaylistPage() ||
-        isSubscriptionsPage() ||
-        isMyPageChannel()) {
-        appendCss(reelHideCss);
-    }
-    else if (isSearchPage()) {
-        appendCss(reelHideCss);
-    }
-    else {
-        console.log("ischannelpage", window.location.pathname.startsWith("/@"));
+    const pageManager = (() => {
+        let PageIdentifier;
+        (function (PageIdentifier) {
+            PageIdentifier[PageIdentifier["Neutral"] = 0] = "Neutral";
+            PageIdentifier[PageIdentifier["RestrictSuggestions"] = 1] = "RestrictSuggestions";
+        })(PageIdentifier || (PageIdentifier = {}));
+        const PageNeutral = () => {
+            let styleNode = null;
+            const unMount = () => {
+                var _a;
+                console.log("Unmount PageNetral.");
+                (_a = styleNode === null || styleNode === void 0 ? void 0 : styleNode.parentNode) === null || _a === void 0 ? void 0 : _a.removeChild(styleNode);
+            };
+            const mount = () => {
+                console.log("Mount PageNetral.");
+                styleNode = appendCss(reelHideCss);
+            };
+            return {
+                identifier: PageIdentifier.Neutral,
+                mount,
+                unMount,
+            };
+        };
         // home page
         // search page
         // video playing page
-        appendCss(`
-      ${videoTagSelectors.join(",")} {
-        opacity: 0!important;
-        pointer-events: none!important;
-      }
+        const PageRestrictSuggestions = () => {
+            let styleNode = null;
+            const unMount = () => {
+                var _a;
+                console.log("Unmount PageRestrictSuggestions.");
+                document.removeEventListener("scroll", showAllowedVideoThumbnails);
+                (_a = styleNode === null || styleNode === void 0 ? void 0 : styleNode.parentNode) === null || _a === void 0 ? void 0 : _a.removeChild(styleNode);
+            };
+            const mount = () => {
+                console.log("Mount PageRestrictSuggestions.");
+                styleNode = appendCss(`
+            ${videoTagSelectors.join(",")} {
+              opacity: 0!important;
+              pointer-events: none!important;
+            }
   
-      ${videoTagSelectors.map((i) => `${i}.tampered-display-none`).join(",")} {
-        display: none!important;
-      }
+            ${videoTagSelectors
+                    .map((i) => `${i}.tampered-display-none`)
+                    .join(",")} {
+              display: none!important;
+            }
   
-      ${videoTagSelectors
-            .map((i) => `${i}.tampered-display-visible`)
-            .join(",")} {
-        display: initial!important;
-        opacity: 1!important;
-        pointer-events: initial!important;
-      }
+            ${videoTagSelectors
+                    .map((i) => `${i}.tampered-display-visible`)
+                    .join(",")} {
+              display: initial!important;
+              opacity: 1!important;
+              pointer-events: initial!important;
+            }
   
-      ${reelHideCss}
-    `);
-        onStartShowAllowedVideoThumbnails();
-        document.addEventListener("scroll", () => showAllowedVideoThumbnails());
-    }
+            ${reelHideCss}
+          `);
+                onStartShowAllowedVideoThumbnails();
+                document.addEventListener("scroll", showAllowedVideoThumbnails);
+            };
+            return {
+                identifier: PageIdentifier.RestrictSuggestions,
+                mount,
+                unMount,
+            };
+        };
+        let currentPage = null;
+        const getNextPage = () => {
+            if (isChannelPage() ||
+                isHistoryPage() ||
+                isPlaylistPage() ||
+                isSubscriptionsPage() ||
+                isMyPageChannel() ||
+                isSearchPage()) {
+                return PageIdentifier.Neutral;
+            }
+            return PageIdentifier.RestrictSuggestions;
+        };
+        const createPageByIdentifier = (id) => {
+            if (id === PageIdentifier.Neutral) {
+                return PageNeutral();
+            }
+            return PageRestrictSuggestions();
+        };
+        const runRequiredScriptIfPageChanged = () => {
+            const nextPageId = getNextPage();
+            if (nextPageId === (currentPage === null || currentPage === void 0 ? void 0 : currentPage.identifier)) {
+                return;
+            }
+            currentPage === null || currentPage === void 0 ? void 0 : currentPage.unMount();
+            currentPage = createPageByIdentifier(nextPageId);
+            currentPage.mount();
+        };
+        const run = () => {
+            runRequiredScriptIfPageChanged();
+            setInterval(() => {
+                runRequiredScriptIfPageChanged();
+            }, 100);
+        };
+        return {
+            run
+        };
+    })();
+    pageManager.run();
 })();
