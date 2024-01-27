@@ -5,14 +5,21 @@
 // @description  try to take over the world!
 // @author       You
 // @match        https://www.youtube.com/**
+// @match        https://m.youtube.com/**
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=youtube.com
 // @grant        none
 // ==/UserScript==
+import { appendCss } from "../utils";
 
-import { appendCss, createHtmlElement } from "../utils";
+declare global {
+  interface Window {
+    activatePrintAvailableChannels: () => void;
+  }
+}
 
 (function () {
   "use strict";
+
   const cleanAuthorString = (text: string) =>
     text
       .trim()
@@ -54,6 +61,7 @@ import { appendCss, createHtmlElement } from "../utils";
     markTampered: () => void;
     showElement: () => void;
     hideElement: () => void;
+    isReel: () => boolean;
   };
 
   const VideoNode = (el: HTMLElement) => {
@@ -118,11 +126,11 @@ import { appendCss, createHtmlElement } from "../utils";
         el.classList.add("tampered-display-none");
         el.classList.remove("tampered-display-visible");
       },
-      el,
+      isReel: () => el.hasAttribute("is-reel-item-style-avatar-circle"),
     } as IVideoNode;
   };
 
-  const activatePrintAuthors = () => {
+  window.activatePrintAvailableChannels = () => {
     let soFarAuthors: string[] = [];
 
     const print = () => {
@@ -316,22 +324,25 @@ import { appendCss, createHtmlElement } from "../utils";
     };
   })();
 
-  const isBanciu = (el: IVideoNode) => /Banciu[\s\0]/.test(el.title);
+  const isBanciu = (el: IVideoNode) => el.title.indexOf("banciu") > -1;
 
   let timeout = 0;
   const showAllowedVideoThumbnails = () => {
     clearTimeout(timeout);
-    timeout  = setTimeout(() => {
+    timeout = setTimeout(() => {
       const allVideos = extractCurrentVideoNodes();
       // allVideos.forEach(i => i.hideElement())
-      allVideos
-        .forEach((i) => {
-          if(isRus(i) || isAllowedChannel(i) || isBanciu(i)) {
-            i.showElement();
-          } else {
-            i.hideElement();
-          }
-        });
+      allVideos.forEach((i) => {
+        if (i.isReel()) {
+          i.hideElement();
+          return;
+        }
+        if (isRus(i) || isAllowedChannel(i) || isBanciu(i)) {
+          i.showElement();
+        } else {
+          i.hideElement();
+        }
+      });
       console.log({ allVideos });
       allVideos.forEach((i) => i.markTampered());
     }, 300);
@@ -348,7 +359,53 @@ import { appendCss, createHtmlElement } from "../utils";
     }, 300);
   };
 
-  const onStartAppendCss = () => {
+  const isChannelPage = () => window.location.pathname.startsWith("/@");
+  const isSearchPage = () => window.location.pathname.startsWith("/results");
+  const isHistoryPage = () =>
+    window.location.pathname.startsWith("/feed/history");
+  const isPlaylistPage = () => window.location.pathname.startsWith("/playlist"); // includes 'watch later'
+  const isSubscriptionsPage = () =>
+    window.location.pathname.startsWith("/feed/subscriptions");
+  const isMyPageChannel = () => window.location.pathname.startsWith("/channel");
+
+  const reelHideCss = `
+    ytm-reel-shelf-renderer {
+        display: none!important;
+    }
+
+    /* mobile reel menu option */
+    ytm-pivot-bar-renderer ytm-pivot-bar-item-renderer:nth-child(2) {
+        display: none!important;
+    }
+
+    /* desktop channel page */
+    .yt-tab-shape-wiz.yt-tab-shape-wiz--host-clickable[tab-title="Shorts"],
+    ytd-reel-shelf-renderer,
+    ytd-reel-shelf-renderer {
+        display: none!important;
+    }
+
+    [is-shorts],
+    [title="Shorts"] {
+      display: none!important;
+    }
+  `;
+
+  if (
+    isChannelPage() ||
+    isHistoryPage() ||
+    isPlaylistPage() ||
+    isSubscriptionsPage() ||
+    isMyPageChannel()
+  ) {
+    appendCss(reelHideCss);
+  } else if (isSearchPage()) {
+    appendCss(reelHideCss);
+  } else {
+    console.log("ischannelpage", window.location.pathname.startsWith("/@"));
+    // home page
+    // search page
+    // video playing page
     appendCss(`
       ${videoTagSelectors.join(",")} {
         opacity: 0!important;
@@ -359,25 +416,18 @@ import { appendCss, createHtmlElement } from "../utils";
         display: none!important;
       }
   
-      ${videoTagSelectors.map((i) => `${i}.tampered-display-visible`).join(",")} {
+      ${videoTagSelectors
+        .map((i) => `${i}.tampered-display-visible`)
+        .join(",")} {
         display: initial!important;
         opacity: 1!important;
         pointer-events: initial!important;
       }
   
-      ytm-reel-shelf-renderer {
-        display: none!important;
-      }
-      ytm-pivot-bar-renderer ytm-pivot-bar-item-renderer:nth-child(2) {
-        display: none!important;
-      }
+      ${reelHideCss}
     `);
+    onStartShowAllowedVideoThumbnails();
+    document.addEventListener("scroll", () => showAllowedVideoThumbnails());
   }
-
-  // main:
-  // activatePrintAuthors();
-  onStartAppendCss();
-  onStartShowAllowedVideoThumbnails();
-  document.addEventListener("scroll", () => showAllowedVideoThumbnails());
 })();
 export {};
